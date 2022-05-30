@@ -47,17 +47,17 @@ class CacheOnly extends Strategy {
 
     const response = await handler.cacheMatch(request);
 
+    const cacheName = await handler.getCacheName(request);
+
     if (process.env.NODE_ENV !== 'production') {
       logger.groupCollapsed(
         messages.strategyStart(this.constructor.name, request),
       );
       if (response) {
-        logger.log(
-          `Found a cached response in the '${this.cacheName}' ` + `cache.`,
-        );
+        logger.log(`Found a cached response in the '${cacheName}' ` + `cache.`);
         messages.printFinalResponse(response);
       } else {
-        logger.log(`No response found in the '${this.cacheName}' cache.`);
+        logger.log(`No response found in the '${cacheName}' cache.`);
       }
       logger.groupEnd();
     }

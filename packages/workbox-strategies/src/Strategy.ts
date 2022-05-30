@@ -21,7 +21,7 @@ import {StrategyHandler} from './StrategyHandler.js';
 import './_version.js';
 
 export interface StrategyOptions {
-  cacheName?: string;
+  cacheName?: string | ((request: Request) => Promise<string>);
   plugins?: WorkboxPlugin[];
   fetchOptions?: RequestInit;
   matchOptions?: CacheQueryOptions;
@@ -33,7 +33,7 @@ export interface StrategyOptions {
  * @memberof workbox-strategies
  */
 abstract class Strategy implements RouteHandlerObject {
-  cacheName: string;
+  cacheName: string | ((request: Request) => Promise<string>);
   plugins: WorkboxPlugin[];
   fetchOptions?: RequestInit;
   matchOptions?: CacheQueryOptions;
@@ -73,7 +73,11 @@ abstract class Strategy implements RouteHandlerObject {
      *
      * @type {string}
      */
-    this.cacheName = cacheNames.getRuntimeName(options.cacheName);
+    this.cacheName =
+      typeof options.cacheName === 'function'
+        ? options.cacheName
+        : cacheNames.getRuntimeName(options.cacheName);
+
     /**
      * The list
      * [Plugins]{@link https://developers.google.com/web/tools/workbox/guides/using-plugins}

@@ -28,6 +28,15 @@ function toRequest(input: RequestInfo) {
   return typeof input === 'string' ? new Request(input) : input;
 }
 
+function toCacheNameFactory(
+  cacheName: string | ((request: Request) => Promise<string>),
+) {
+  if (typeof cacheName === 'string') {
+    return () => Promise.resolve(cacheName);
+  }
+  return cacheName;
+}
+
 /**
  * A class created every time a Strategy instance instance calls
  * {@link workbox-strategies.Strategy~handle} or
@@ -274,9 +283,12 @@ class StrategyHandler {
   async cacheMatch(key: RequestInfo): Promise<Response | undefined> {
     const request: Request = toRequest(key);
     let cachedResponse: Response | undefined;
-    const {cacheName, matchOptions} = this._strategy;
+    const {matchOptions} = this._strategy;
 
     const effectiveRequest = await this.getCacheKey(request, 'read');
+
+    const cacheName = await this.getCacheName(request);
+
     const multiMatchOptions = {...matchOptions, ...{cacheName}};
 
     cachedResponse = await caches.match(effectiveRequest, multiMatchOptions);
@@ -372,7 +384,10 @@ class StrategyHandler {
       return false;
     }
 
-    const {cacheName, matchOptions} = this._strategy;
+    const {matchOptions} = this._strategy;
+
+    const cacheName = await this.getCacheName(request);
+
     const cache = await self.caches.open(cacheName);
 
     const hasCacheUpdateCallback = this.hasCallback('cacheDidUpdate');
@@ -421,6 +436,14 @@ class StrategyHandler {
     }
 
     return true;
+  }
+
+  async getCacheName(request: Request): Promise<string> {
+    let factory = toCacheNameFactory(this._strategy.cacheName);
+
+    // FIXME: using cache like getCacheKey
+
+    return factory(request);
   }
 
   /**
@@ -633,4 +656,4 @@ class StrategyHandler {
   }
 }
 
-export {StrategyHandler};
+export {StrategyHandler, toRequest, toCacheNameFactory};

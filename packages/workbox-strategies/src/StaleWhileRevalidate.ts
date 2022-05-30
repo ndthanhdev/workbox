@@ -88,18 +88,20 @@ class StaleWhileRevalidate extends Strategy {
 
     let response = await handler.cacheMatch(request);
 
+    const cacheName = await handler.getCacheName(request);
+
     let error;
     if (response) {
       if (process.env.NODE_ENV !== 'production') {
         logs.push(
-          `Found a cached response in the '${this.cacheName}'` +
+          `Found a cached response in the '${cacheName}'` +
             ` cache. Will update with the network response in the background.`,
         );
       }
     } else {
       if (process.env.NODE_ENV !== 'production') {
         logs.push(
-          `No response found in the '${this.cacheName}' cache. ` +
+          `No response found in the '${cacheName}' cache. ` +
             `Will wait for the network response.`,
         );
       }

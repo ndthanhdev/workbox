@@ -51,11 +51,13 @@ class CacheFirst extends Strategy {
 
     let response = await handler.cacheMatch(request);
 
+    const cacheName = await handler.getCacheName(request);
+
     let error: Error | undefined = undefined;
     if (!response) {
       if (process.env.NODE_ENV !== 'production') {
         logs.push(
-          `No response found in the '${this.cacheName}' cache. ` +
+          `No response found in the '${cacheName}' cache. ` +
             `Will respond with a network request.`,
         );
       }
@@ -76,7 +78,7 @@ class CacheFirst extends Strategy {
       }
     } else {
       if (process.env.NODE_ENV !== 'production') {
-        logs.push(`Found a cached response in the '${this.cacheName}' cache.`);
+        logs.push(`Found a cached response in the '${cacheName}' cache.`);
       }
     }
 

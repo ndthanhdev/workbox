@@ -238,16 +238,18 @@ class NetworkFirst extends Strategy {
       }
     }
 
+    const cacheName = await handler.getCacheName(request);
+
     if (error || !response) {
       response = await handler.cacheMatch(request);
 
       if (process.env.NODE_ENV !== 'production') {
         if (response) {
           logs.push(
-            `Found a cached response in the '${this.cacheName}'` + ` cache.`,
+            `Found a cached response in the '${cacheName}'` + ` cache.`,
           );
         } else {
-          logs.push(`No response found in the '${this.cacheName}' cache.`);
+          logs.push(`No response found in the '${cacheName}' cache.`);
         }
       }
     }

@@ -23,6 +23,21 @@ import {PrecacheStrategy} from './PrecacheStrategy.js';
 import {PrecacheEntry, InstallResult, CleanupResult} from './_types.js';
 import './_version.js';
 
+// FIXME: remove duplication with `StrategyHandler`
+function toRequest(input: RequestInfo) {
+  return typeof input === 'string' ? new Request(input) : input;
+}
+
+// FIXME: remove duplication with `StrategyHandler`
+function toCacheNameFactory(
+  cacheName: string | ((request: Request) => Promise<string>),
+) {
+  if (typeof cacheName === 'string') {
+    return () => Promise.resolve(cacheName);
+  }
+  return cacheName;
+}
+
 // Give TypeScript the correct global.
 declare let self: ServiceWorkerGlobalScope;
 
@@ -74,7 +89,10 @@ class PrecacheController {
     fallbackToNetwork = true,
   }: PrecacheControllerOptions = {}) {
     this._strategy = new PrecacheStrategy({
-      cacheName: cacheNames.getPrecacheName(cacheName),
+      cacheName:
+        typeof cacheName === 'function'
+          ? cacheName
+          : cacheNames.getRuntimeName(cacheName),
       plugins: [
         ...plugins,
         new PrecacheCacheKeyPlugin({precacheController: this}),
@@ -248,7 +266,8 @@ class PrecacheController {
     // waitUntil returns Promise<any>
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return waitUntil(event, async () => {
-      const cache = await self.caches.open(this.strategy.cacheName);
+      // FIXME: currently I don't use precache so bypass this for now
+      const cache = await self.caches.open(this.strategy.cacheName as string);
       const currentlyCachedRequests = await cache.keys();
       const expectedCacheKeys = new Set(this._urlsToCacheKeys.values());
 
@@ -335,7 +354,10 @@ class PrecacheController {
     const url = request instanceof Request ? request.url : request;
     const cacheKey = this.getCacheKeyForURL(url);
     if (cacheKey) {
-      const cache = await self.caches.open(this.strategy.cacheName);
+      const cacheName = await toCacheNameFactory(this.strategy.cacheName)(
+        toRequest(request),
+      );
+      const cache = await self.caches.open(cacheName);
       return cache.match(cacheKey);
     }
     return undefined;

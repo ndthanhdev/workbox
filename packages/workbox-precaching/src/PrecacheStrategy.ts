@@ -70,7 +70,10 @@ class PrecacheStrategy extends Strategy {
    * get the response from the network if there's a precache miss.
    */
   constructor(options: PrecacheStrategyOptions = {}) {
-    options.cacheName = cacheNames.getPrecacheName(options.cacheName);
+    options.cacheName =
+      typeof options.cacheName === 'function'
+        ? options.cacheName
+        : cacheNames.getRuntimeName(options.cacheName);
     super(options);
 
     this._fallbackToNetwork =
